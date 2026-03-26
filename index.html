@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Projexa — IoT Smart Environmental Monitoring</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- ─── NAVIGATION ─── -->
+  <nav>
+    <div class="nav-logo">
+      <div class="dot"></div>
+      Projexa
+    </div>
+    <ul class="nav-links">
+      <li><a href="#dashboard">Dashboard</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#technology">Tech Stack</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+    <span class="nav-badge">TEAM 26E1153</span>
+  </nav>
+
+  <!-- ─── HERO ─── -->
+  <div class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-glow2"></div>
+    <div class="hero-content">
+      <div class="hero-tag">⚡ IoT · Real-Time · Cloud-Connected</div>
+      <h1>Smart <span>Environmental</span><br/>Monitoring System</h1>
+      <p>Continuously monitors temperature, humidity, air quality, and gas concentration — delivering real-time insights and automated alerts from sensor to cloud.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="document.getElementById('dashboard').scrollIntoView({behavior:'smooth'})">View Live Dashboard</button>
+        <button class="btn-outline" onclick="document.getElementById('architecture').scrollIntoView({behavior:'smooth'})">System Architecture</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item"><span class="stat-num">4</span><span class="stat-label">Sensor Types</span></div>
+        <div class="stat-item"><span class="stat-num">2s</span><span class="stat-label">Update Interval</span></div>
+        <div class="stat-item"><span class="stat-num">99%</span><span class="stat-label">Uptime Target</span></div>
+        <div class="stat-item"><span class="stat-num">ESP32</span><span class="stat-label">Microcontroller</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── LIVE DASHBOARD ─── -->
+  <div class="dashboard-section" id="dashboard">
+    <div class="dashboard-inner">
+      <div class="section-label">Live Data Feed</div>
+      <div class="dashboard-header">
+        <h2 class="section-title">Environmental Dashboard</h2>
+        <button class="sim-btn" id="simBtn" onclick="triggerAlert()">⚡ Simulate Alert</button>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-indicator">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">All systems normal — ESP32 connected via Wi-Fi</span>
+        </div>
+        <div class="last-update" id="lastUpdate">Last update: just now</div>
+      </div>
+
+      <!-- Sensor Cards -->
+      <div class="sensor-grid">
+        <div class="sensor-card temp">
+          <div class="sensor-icon">🌡️</div>
+          <div class="sensor-label">TEMPERATURE</div>
+          <div class="sensor-value" id="tempVal">28.4</div>
+          <div class="sensor-unit">°C / DHT11</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="tempBar" style="width:57%"></div></div>
+          <div class="sensor-status normal" id="tempStatus">✓ Normal Range</div>
+        </div>
+
+        <div class="sensor-card humidity">
+          <div class="sensor-icon">💧</div>
+          <div class="sensor-label">HUMIDITY</div>
+          <div class="sensor-value" id="humVal">62.1</div>
+          <div class="sensor-unit">% RH / DHT11</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="humBar" style="width:62%"></div></div>
+          <div class="sensor-status normal" id="humStatus">✓ Comfortable</div>
+        </div>
+
+        <div class="sensor-card air">
+          <div class="sensor-icon">🌬️</div>
+          <div class="sensor-label">AIR QUALITY (AQI)</div>
+          <div class="sensor-value" id="aqiVal">87</div>
+          <div class="sensor-unit">ppm / MQ-135</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="aqiBar" style="width:35%"></div></div>
+          <div class="sensor-status normal" id="aqiStatus">✓ Good</div>
+        </div>
+
+        <div class="sensor-card gas">
+          <div class="sensor-icon">⚗️</div>
+          <div class="sensor-label">GAS CONCENTRATION</div>
+          <div class="sensor-value" id="gasVal">42</div>
+          <div class="sensor-unit">ppm / MQ-2</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="gasBar" style="width:14%"></div></div>
+          <div class="sensor-status normal" id="gasStatus">✓ Safe Level</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-wrapper">
+        <div class="chart-header">
+          <div class="chart-title">Historical Readings — Last 60 minutes</div>
+          <div class="chart-tabs">
+            <button class="chart-tab active" onclick="switchChart('temp',this)">Temp</button>
+            <button class="chart-tab" onclick="switchChart('hum',this)">Humidity</button>
+            <button class="chart-tab" onclick="switchChart('aqi',this)">AQI</button>
+            <button class="chart-tab" onclick="switchChart('gas',this)">Gas</button>
+          </div>
+        </div>
+        <canvas id="envChart" height="200"></canvas>
+      </div>
+
+      <!-- Alerts Panel -->
+      <div class="alerts-panel">
+        <div class="alerts-header">
+          <div class="alerts-title">
+            🔔 Recent Alerts
+            <span class="alert-count" id="alertCountBadge">2</span>
+          </div>
+          <button class="sim-btn" onclick="clearAlerts()">Clear All</button>
+        </div>
+        <div id="alertsList">
+          <div class="alert-item">
+            <div class="alert-icon warn">⚠️</div>
+            <div class="alert-text">
+              <div class="alert-msg">Humidity exceeded 70% threshold</div>
+              <div class="alert-time">2 min ago · Sensor #01</div>
+            </div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-icon danger">🚨</div>
+            <div class="alert-text">
+              <div class="alert-msg">AQI spike detected — 142 ppm (Poor)</div>
+              <div class="alert-time">18 min ago · Sensor #02</div>
+            </div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-icon info">ℹ️</div>
+            <div class="alert-text">
+              <div class="alert-msg">System connected to Firebase cloud</div>
+              <div class="alert-time">1 hr ago · System</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SYSTEM ARCHITECTURE ─── -->
+  <div class="arch-section" id="architecture">
+    <section>
+      <div class="section-label reveal">System Design</div>
+      <h2 class="section-title reveal">5-Layer Architecture</h2>
+      <p class="section-sub reveal">Sensor data flows from the physical layer through wireless transmission to the cloud, and finally reaches the user as real-time visualizations and alerts.</p>
+
+      <div class="arch-flow reveal">
+        <div class="arch-node">
+          <div class="arch-node-icon">🔌</div>
+          <div class="arch-node-title">Sensors</div>
+          <div class="arch-node-sub">DHT11 · MQ-2 · MQ-135</div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-node">
+          <div class="arch-node-icon">🖥️</div>
+          <div class="arch-node-title">Microcontroller</div>
+          <div class="arch-node-sub">ESP8266 / ESP32</div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-node">
+          <div class="arch-node-icon">📡</div>
+          <div class="arch-node-title">Wi-Fi Tx</div>
+          <div class="arch-node-sub">MQTT / HTTP</div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-node">
+          <div class="arch-node-icon">☁️</div>
+          <div class="arch-node-title">Cloud</div>
+          <div class="arch-node-sub">Firebase / ThingSpeak</div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-node">
+          <div class="arch-node-icon">📊</div>
+          <div class="arch-node-title">Dashboard</div>
+          <div class="arch-node-sub">Web + Mobile</div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-node">
+          <div class="arch-node-icon">🔔</div>
+          <div class="arch-node-title">Alerts</div>
+          <div class="arch-node-sub">Push / Email / SMS</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ─── PROBLEM & GAP ─── -->
+  <section id="problem">
+    <div class="section-label reveal">Problem Statement</div>
+    <h2 class="section-title reveal">Why This System Exists</h2>
+    <p class="section-sub reveal">Environmental pollution and unsafe conditions are major global concerns. Traditional monitoring is manual, error-prone, and incapable of real-time response.</p>
+
+    <div class="feature-grid reveal">
+      <div class="feature-card">
+        <div class="feature-num">01 / PROBLEM</div>
+        <div class="feature-title">No Real-Time Visibility</div>
+        <div class="feature-text">Manual or standalone instruments cannot provide continuous data. Sudden changes — gas leaks, air quality degradation — go undetected until too late.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">02 / PROBLEM</div>
+        <div class="feature-title">Fragmented &amp; Costly Systems</div>
+        <div class="feature-text">Commercial solutions are expensive, monitor only single parameters, and lack centralized access or user-friendly dashboards.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">03 / SOLUTION</div>
+        <div class="feature-title">IoT-Driven Automation</div>
+        <div class="feature-text">Using ESP32, cloud platforms, and multi-sensor arrays to provide a scalable, low-cost, real-time monitoring system with automated alerting.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">04 / IMPACT</div>
+        <div class="feature-title">Smart City Readiness</div>
+        <div class="feature-text">Deployable across homes, industries, and public environments. Enables proactive decision-making and supports smart city infrastructure goals.</div>
+      </div>
+    </div>
+
+    <div class="progress-divider"></div>
+
+    <div class="section-label reveal">Gap Analysis</div>
+    <h2 class="section-title reveal">What Existing Systems Lack</h2>
+
+    <div class="reveal">
+      <table class="gap-table">
+        <thead>
+          <tr>
+            <th>Existing System</th>
+            <th>Core Limitation</th>
+            <th>Our Fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Manual Monitoring</td>
+            <td class="td-danger">Time-consuming, human error, no real-time</td>
+            <td><span class="badge-fix">Automated 2s refresh</span></td>
+          </tr>
+          <tr>
+            <td>Traditional Stations</td>
+            <td class="td-warn">Extremely high cost, not portable</td>
+            <td><span class="badge-fix">Low-cost IoT nodes</span></td>
+          </tr>
+          <tr>
+            <td>WSN-Based Systems</td>
+            <td class="td-warn">Limited scalability, no cloud integration</td>
+            <td><span class="badge-fix">Firebase + ThingSpeak</span></td>
+          </tr>
+          <tr>
+            <td>Single-Param IoT</td>
+            <td class="td-danger">Only tracks one environmental parameter</td>
+            <td><span class="badge-fix">4 sensors unified</span></td>
+          </tr>
+          <tr>
+            <td>Commercial Devices</td>
+            <td class="td-warn">Closed ecosystem, poor UI, expensive</td>
+            <td><span class="badge-fix">Open dashboard + alerts</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── TECH STACK ─── -->
+  <div class="tech-section" id="technology">
+    <section>
+      <div class="section-label reveal">Tools &amp; Technologies</div>
+      <h2 class="section-title reveal">The Full Tech Stack</h2>
+      <p class="section-sub reveal">Every component — from hardware to cloud to UI — chosen for reliability, cost-efficiency, and ease of integration.</p>
+
+      <div class="tech-grid reveal">
+        <div class="tech-chip"><div class="tech-chip-icon">🔧</div><div class="tech-chip-name">ESP32</div><div class="tech-chip-role">Microcontroller</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">🌡️</div><div class="tech-chip-name">DHT11</div><div class="tech-chip-role">Temp &amp; Humidity</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">💨</div><div class="tech-chip-name">MQ-135</div><div class="tech-chip-role">Air Quality</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">⚗️</div><div class="tech-chip-name">MQ-2</div><div class="tech-chip-role">Gas Detection</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">🔥</div><div class="tech-chip-name">Firebase</div><div class="tech-chip-role">Realtime Database</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">📈</div><div class="tech-chip-name">ThingSpeak</div><div class="tech-chip-role">Data Visualization</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">☁️</div><div class="tech-chip-name">AWS IoT</div><div class="tech-chip-role">Cloud Platform</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">📡</div><div class="tech-chip-name">MQTT</div><div class="tech-chip-role">IoT Protocol</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">⚡</div><div class="tech-chip-name">Arduino IDE</div><div class="tech-chip-role">Firmware Dev</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">📱</div><div class="tech-chip-name">Web Dashboard</div><div class="tech-chip-role">UI / Frontend</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ─── OBJECTIVES ─── -->
+  <section id="about">
+    <div class="section-label reveal">Project Objectives</div>
+    <h2 class="section-title reveal">What We're Building Towards</h2>
+
+    <div class="feature-grid reveal">
+      <div class="feature-card">
+        <div class="feature-num">PRIMARY</div>
+        <div class="feature-title">Real-Time Monitoring</div>
+        <div class="feature-text">Design a system that continuously collects and displays environmental parameters with sub-3-second latency from sensor to dashboard.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">PRIMARY</div>
+        <div class="feature-title">Cloud Storage &amp; Visualisation</div>
+        <div class="feature-text">Store all readings on Firebase/ThingSpeak with historical trend graphs accessible from any device via web or mobile.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">SECONDARY</div>
+        <div class="feature-title">Automated Anomaly Alerts</div>
+        <div class="feature-text">Detect threshold breaches and automatically dispatch push notifications, emails, or SMS alerts without human intervention.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">SECONDARY</div>
+        <div class="feature-title">Scalability &amp; Reliability</div>
+        <div class="feature-text">Architect the system so additional sensor nodes can be added with minimal reconfiguration, targeting 99%+ operational uptime.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer class="footer">
+    <div>
+      <div class="footer-brand">Projexa <span class="accent-dot">·</span> 26E1153</div>
+      <div class="footer-sub">IoT Smart Environmental Monitoring &amp; Alert System</div>
+    </div>
+    <div class="footer-meta">
+      K.R. Mangalam University, Gurugram — 122001<br/>
+      B.Tech CSE (Cyber Security) · Section A · January 2026<br/>
+      Supervised by: Faculty, Dept. of Computer Science &amp; Engineering
+    </div>
+  </footer>
+
+  <!-- ─── ALERT TOAST ─── -->
+  <div class="alert-toast" id="alertToast">
+    <div class="toast-icon">🚨</div>
+    <div>
+      <div class="toast-title">HAZARDOUS CONDITION</div>
+      <div class="toast-msg" id="toastMsg">Gas concentration exceeded safe threshold!</div>
+    </div>
+  </div>
+
+  <!-- ─── SCRIPTS ─── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
