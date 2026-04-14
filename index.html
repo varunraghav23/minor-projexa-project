@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Projexa — Live Environmental Monitoring</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- ─── NAVIGATION ─── -->
+  <nav>
+    <div class="nav-logo">
+      <div class="dot" id="navDot"></div>
+      Projexa
+    </div>
+    <ul class="nav-links">
+      <li><a href="#dashboard">Dashboard</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#technology">Tech Stack</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+    <span class="nav-badge">TEAM 26E1153</span>
+  </nav>
+
+  <!-- ─── API KEY SETUP BANNER ─── -->
+  <div class="setup-banner" id="setupBanner">
+    <div class="setup-inner">
+      <div class="setup-icon">🔑</div>
+      <div class="setup-text">
+        <div class="setup-title">Connect to Live Weather Data</div>
+        <div class="setup-sub">
+          Free API key from
+          <a href="https://home.openweathermap.org/users/sign_up" target="_blank" rel="noopener">openweathermap.org</a>
+          — 2 minutes, no credit card required · 1000 free calls/day
+        </div>
+      </div>
+      <div class="setup-fields">
+        <input type="text" id="apiKeyInput"  class="setup-input"            placeholder="Paste your OWM API key" autocomplete="off"/>
+        <input type="text" id="cityInput"    class="setup-input city-input" placeholder="City  (e.g. Gurugram)"   autocomplete="off"/>
+        <button class="setup-btn" onclick="applyApiKey()">Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── HERO ─── -->
+  <div class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-glow2"></div>
+    <div class="hero-content">
+      <div class="hero-tag">⚡ Live Weather API · Real Data · OpenWeatherMap</div>
+      <h1>Smart <span>Environmental</span><br/>Monitoring System</h1>
+      <p>Real-time temperature, humidity, air quality and pollutant data pulled directly from OpenWeatherMap — updated every 60 seconds from global weather stations.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="document.getElementById('dashboard').scrollIntoView({behavior:'smooth'})">View Live Dashboard</button>
+        <button class="btn-outline" onclick="document.getElementById('architecture').scrollIntoView({behavior:'smooth'})">System Architecture</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item"><span class="stat-num" id="heroCity">--</span><span class="stat-label">City</span></div>
+        <div class="stat-item"><span class="stat-num">60s</span><span class="stat-label">Refresh Rate</span></div>
+        <div class="stat-item"><span class="stat-num">OWM</span><span class="stat-label">Data Source</span></div>
+        <div class="stat-item"><span class="stat-num">Free</span><span class="stat-label">API Tier</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── LIVE DASHBOARD ─── -->
+  <div class="dashboard-section" id="dashboard">
+    <div class="dashboard-inner">
+      <div class="section-label">Live Weather Feed</div>
+      <div class="dashboard-header">
+        <h2 class="section-title">Environmental Dashboard</h2>
+        <div class="city-switcher">
+          <input type="text" id="citySwitchInput" class="city-switch-field" placeholder="Switch city…"
+            onkeydown="if(event.key==='Enter') switchCity()"/>
+          <button class="sim-btn" onclick="switchCity()">Go</button>
+          <button class="sim-btn" id="refreshBtn" onclick="fetchAllData(true)">⟳ Refresh</button>
+        </div>
+      </div>
+
+      <!-- Weather condition bar -->
+      <div class="weather-condition-bar" id="conditionBar" style="display:none">
+        <span class="weather-icon" id="weatherIcon">🌤️</span>
+        <span class="weather-desc" id="weatherDesc">—</span>
+        <span class="weather-meta" id="weatherFeels"></span>
+        <span class="weather-meta" id="weatherWind"></span>
+        <span class="weather-location-badge" id="weatherLocation"></span>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-indicator">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Waiting for API key — enter it in the banner above</span>
+        </div>
+        <div class="last-update" id="lastUpdate">Not yet fetched</div>
+      </div>
+
+      <!-- Main Sensor Cards (4) -->
+      <div class="sensor-grid">
+        <div class="sensor-card temp">
+          <div class="sensor-icon">🌡️</div>
+          <div class="sensor-label">TEMPERATURE</div>
+          <div class="sensor-value" id="tempVal">--</div>
+          <div class="sensor-unit">°C · OpenWeatherMap</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="tempBar" style="width:0%"></div></div>
+          <div class="sensor-status normal" id="tempStatus">Waiting for data…</div>
+        </div>
+
+        <div class="sensor-card humidity">
+          <div class="sensor-icon">💧</div>
+          <div class="sensor-label">HUMIDITY</div>
+          <div class="sensor-value" id="humVal">--</div>
+          <div class="sensor-unit">% RH · OpenWeatherMap</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="humBar" style="width:0%"></div></div>
+          <div class="sensor-status normal" id="humStatus">Waiting for data…</div>
+        </div>
+
+        <div class="sensor-card air">
+          <div class="sensor-icon">🌬️</div>
+          <div class="sensor-label">AIR QUALITY (PM2.5)</div>
+          <div class="sensor-value" id="aqiVal">--</div>
+          <div class="sensor-unit">µg/m³ · OWM Air Pollution</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="aqiBar" style="width:0%"></div></div>
+          <div class="sensor-status normal" id="aqiStatus">Waiting for data…</div>
+        </div>
+
+        <div class="sensor-card gas">
+          <div class="sensor-icon">⚗️</div>
+          <div class="sensor-label">CO CONCENTRATION</div>
+          <div class="sensor-value" id="gasVal">--</div>
+          <div class="sensor-unit">µg/m³ · OWM Air Pollution</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="gasBar" style="width:0%"></div></div>
+          <div class="sensor-status normal" id="gasStatus">Waiting for data…</div>
+        </div>
+      </div>
+
+      <!-- Extra metrics row -->
+      <div class="sensor-grid mini-grid">
+        <div class="sensor-card mini-card">
+          <div class="sensor-label">NO₂</div>
+          <div class="sensor-value mini-val" id="no2Val">--</div>
+          <div class="sensor-unit">µg/m³</div>
+        </div>
+        <div class="sensor-card mini-card">
+          <div class="sensor-label">O₃ OZONE</div>
+          <div class="sensor-value mini-val" id="o3Val">--</div>
+          <div class="sensor-unit">µg/m³</div>
+        </div>
+        <div class="sensor-card mini-card">
+          <div class="sensor-label">PRESSURE</div>
+          <div class="sensor-value mini-val" id="pressVal">--</div>
+          <div class="sensor-unit">hPa</div>
+        </div>
+        <div class="sensor-card mini-card">
+          <div class="sensor-label">WIND SPEED</div>
+          <div class="sensor-value mini-val" id="windVal">--</div>
+          <div class="sensor-unit">m/s</div>
+        </div>
+        <div class="sensor-card mini-card">
+          <div class="sensor-label">VISIBILITY</div>
+          <div class="sensor-value mini-val" id="visVal">--</div>
+          <div class="sensor-unit">km</div>
+        </div>
+        <div class="sensor-card mini-card">
+          <div class="sensor-label">OWM AQI INDEX</div>
+          <div class="sensor-value mini-val" id="aqiIndexVal">--</div>
+          <div class="sensor-unit">1 Good → 5 Very Poor</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-wrapper">
+        <div class="chart-header">
+          <div class="chart-title">Historical Readings — rolling 30 fetches</div>
+          <div class="chart-tabs">
+            <button class="chart-tab active" onclick="switchChart('temp',this)">Temp</button>
+            <button class="chart-tab" onclick="switchChart('hum',this)">Humidity</button>
+            <button class="chart-tab" onclick="switchChart('aqi',this)">PM2.5</button>
+            <button class="chart-tab" onclick="switchChart('gas',this)">CO</button>
+          </div>
+        </div>
+        <canvas id="envChart" height="200"></canvas>
+      </div>
+
+      <!-- Alerts Panel -->
+      <div class="alerts-panel">
+        <div class="alerts-header">
+          <div class="alerts-title">
+            🔔 Alerts &amp; Notifications
+            <span class="alert-count" id="alertCountBadge">0</span>
+          </div>
+          <button class="sim-btn" onclick="clearAlerts()">Clear All</button>
+        </div>
+        <div id="alertsList">
+          <div class="alert-item">
+            <div class="alert-icon info">ℹ️</div>
+            <div class="alert-text">
+              <div class="alert-msg">Enter your OpenWeatherMap API key above to start live monitoring</div>
+              <div class="alert-time">System · ready</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ARCHITECTURE ─── -->
+  <div class="arch-section" id="architecture">
+    <section>
+      <div class="section-label reveal">Data Flow</div>
+      <h2 class="section-title reveal">Live API Architecture</h2>
+      <p class="section-sub reveal">Weather stations and satellites feed OpenWeatherMap servers. Your browser fetches the data directly — no hardware needed.</p>
+      <div class="arch-flow reveal">
+        <div class="arch-node">
+          <div class="arch-node-icon">🛰️</div>
+          <div class="arch-node-title">Weather Stations</div>
+          <div class="arch-node-sub">Global sensor network</div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-node">
+          <div class="arch-node-icon">☁️</div>
+          <div class="arch-node-title">OpenWeatherMap</div>
+          <div class="arch-node-sub">REST API v2.5</div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-node">
+          <div class="arch-node-icon">🔗</div>
+          <div class="arch-node-title">HTTP Fetch</div>
+          <div class="arch-node-sub">Browser / Python</div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-node">
+          <div class="arch-node-icon">📊</div>
+          <div class="arch-node-title">Dashboard</div>
+          <div class="arch-node-sub">Real-time display</div>
+        </div>
+        <div class="arch-arrow"></div>
+        <div class="arch-node">
+          <div class="arch-node-icon">🔔</div>
+          <div class="arch-node-title">Alerts</div>
+          <div class="arch-node-sub">Threshold detection</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ─── PROBLEM & GAP ─── -->
+  <section id="problem">
+    <div class="section-label reveal">Problem Statement</div>
+    <h2 class="section-title reveal">Why This System Exists</h2>
+    <p class="section-sub reveal">Environmental pollution and unsafe conditions are major global concerns. Traditional monitoring is manual, error-prone, and incapable of real-time response.</p>
+    <div class="feature-grid reveal">
+      <div class="feature-card">
+        <div class="feature-num">01 / PROBLEM</div>
+        <div class="feature-title">No Real-Time Visibility</div>
+        <div class="feature-text">Manual or standalone instruments cannot provide continuous data. Sudden changes — gas leaks, air quality degradation — go undetected until too late.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">02 / PROBLEM</div>
+        <div class="feature-title">Fragmented &amp; Costly Systems</div>
+        <div class="feature-text">Commercial solutions are expensive, monitor only single parameters, and lack centralized access or user-friendly dashboards.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">03 / SOLUTION</div>
+        <div class="feature-title">Weather API Integration</div>
+        <div class="feature-text">OpenWeatherMap's free API delivers real atmospheric data — temperature, humidity, PM2.5, CO, NO₂, O₃ — for any city on Earth, instantly.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">04 / IMPACT</div>
+        <div class="feature-title">Global City Coverage</div>
+        <div class="feature-text">No hardware required. The same dashboard monitors Gurugram, Delhi, Mumbai, or any city worldwide using the same free API key.</div>
+      </div>
+    </div>
+
+    <div class="progress-divider"></div>
+
+    <div class="section-label reveal">Gap Analysis</div>
+    <h2 class="section-title reveal">What Existing Systems Lack</h2>
+    <div class="reveal">
+      <table class="gap-table">
+        <thead><tr><th>Existing System</th><th>Core Limitation</th><th>Our Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Manual Monitoring</td><td class="td-danger">Time-consuming, error-prone</td><td><span class="badge-fix">Auto 60s refresh</span></td></tr>
+          <tr><td>Traditional Stations</td><td class="td-warn">High cost, not portable</td><td><span class="badge-fix">Free OWM API</span></td></tr>
+          <tr><td>WSN-Based Systems</td><td class="td-warn">Limited scalability</td><td><span class="badge-fix">Any city worldwide</span></td></tr>
+          <tr><td>Single-Param IoT</td><td class="td-danger">Only one parameter</td><td><span class="badge-fix">6+ parameters</span></td></tr>
+          <tr><td>Commercial Devices</td><td class="td-warn">Closed, expensive</td><td><span class="badge-fix">Open + free tier</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── TECH STACK ─── -->
+  <div class="tech-section" id="technology">
+    <section>
+      <div class="section-label reveal">Tools &amp; Technologies</div>
+      <h2 class="section-title reveal">The Full Tech Stack</h2>
+      <p class="section-sub reveal">Chosen for reliability, zero cost, and global coverage.</p>
+      <div class="tech-grid reveal">
+        <div class="tech-chip"><div class="tech-chip-icon">🌍</div><div class="tech-chip-name">OpenWeatherMap</div><div class="tech-chip-role">Weather + AQ API</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">🌡️</div><div class="tech-chip-name">Current Weather</div><div class="tech-chip-role">Temp, Humidity, Wind</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">💨</div><div class="tech-chip-name">Air Pollution API</div><div class="tech-chip-role">PM2.5, CO, NO₂, O₃</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">📡</div><div class="tech-chip-name">REST API v2.5</div><div class="tech-chip-role">HTTP / JSON</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">🐍</div><div class="tech-chip-name">Python Flask</div><div class="tech-chip-role">Backend server</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">📈</div><div class="tech-chip-name">Chart.js</div><div class="tech-chip-role">Data Visualization</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">🎨</div><div class="tech-chip-name">Vanilla JS</div><div class="tech-chip-role">Frontend logic</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">🔔</div><div class="tech-chip-name">Alert Engine</div><div class="tech-chip-role">Threshold detection</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">📱</div><div class="tech-chip-name">Responsive UI</div><div class="tech-chip-role">Mobile + Desktop</div></div>
+        <div class="tech-chip"><div class="tech-chip-icon">🆓</div><div class="tech-chip-name">Free Tier</div><div class="tech-chip-role">1000 calls/day</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ─── OBJECTIVES ─── -->
+  <section id="about">
+    <div class="section-label reveal">Project Objectives</div>
+    <h2 class="section-title reveal">What We're Building Towards</h2>
+    <div class="feature-grid reveal">
+      <div class="feature-card"><div class="feature-num">PRIMARY</div><div class="feature-title">Real-Time Monitoring</div><div class="feature-text">Pull live environmental parameters from OpenWeatherMap every 60 seconds, with threshold-based status indicators.</div></div>
+      <div class="feature-card"><div class="feature-num">PRIMARY</div><div class="feature-title">Multi-Parameter Tracking</div><div class="feature-text">Chart temperature, humidity, PM2.5, CO, NO₂, O₃, pressure, wind — all from a single free API call.</div></div>
+      <div class="feature-card"><div class="feature-num">SECONDARY</div><div class="feature-title">Automated Anomaly Alerts</div><div class="feature-text">Detect threshold breaches automatically — high PM2.5, extreme temperatures, poor AQI — logged to the alerts panel.</div></div>
+      <div class="feature-card"><div class="feature-num">SECONDARY</div><div class="feature-title">Global City Coverage</div><div class="feature-text">Switch between any city worldwide instantly. Same dashboard, same code, any location on Earth.</div></div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer class="footer">
+    <div>
+      <div class="footer-brand">Projexa <span class="accent-dot">·</span> 26E1153</div>
+      <div class="footer-sub">Live Weather Edition — powered by OpenWeatherMap</div>
+    </div>
+    <div class="footer-meta">
+      K.R. Mangalam University, Gurugram — 122001<br/>
+      B.Tech CSE (Cyber Security) · Section A · January 2026<br/>
+      Data: openweathermap.org · Free tier · 1000 calls/day
+    </div>
+  </footer>
+
+  <!-- ─── TOAST ─── -->
+  <div class="alert-toast" id="alertToast">
+    <div class="toast-icon">🚨</div>
+    <div>
+      <div class="toast-title">ENVIRONMENTAL ALERT</div>
+      <div class="toast-msg" id="toastMsg">Threshold exceeded!</div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
